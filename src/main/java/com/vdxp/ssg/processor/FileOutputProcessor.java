@@ -1,9 +1,11 @@
 package com.vdxp.ssg.processor;
 
+import com.vdxp.ssg.content.BinaryContentFile;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentFile;
 import com.vdxp.ssg.content.ContentNode;
 import com.vdxp.ssg.content.ContentVisitor;
+import com.vdxp.ssg.content.TextContentFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Deque;
 
@@ -42,6 +45,15 @@ public class FileOutputProcessor {
 		}
 
 		@Override
+		public void visit(final TextContentFile contentFile, final Deque<ContentNode> parents) {
+			visit((ContentFile) contentFile, parents);
+		}
+
+		@Override
+		public void visit(final BinaryContentFile contentFile, final Deque<ContentNode> parents) {
+			visit((ContentFile) contentFile, parents);
+		}
+
 		public void visit(final ContentFile contentFile, final Deque<ContentNode> parents) {
 			final String filePath = makeFilePath(parents, contentFile);
 			final File file = new File(filePath);
@@ -50,25 +62,34 @@ public class FileOutputProcessor {
 				return;
 			}
 
-			final FileOutputStream output;
+			log.debug("Writing {} to {}", contentFile.getSource(), filePath);
 
-			try {
-				output = new FileOutputStream(file);
-			} catch (final FileNotFoundException e) {
-				log.error("Could not open file {}", file.getAbsolutePath(), e);
+			final InputStream input = makeInputStream(contentFile);
+			final FileOutputStream output = makeFileOutputStream(file);
+
+			if (input == null || output == null) {
 				return;
 			}
 
+			final byte[] buf = new byte[8192];
+
 			try {
-				output.write(contentFile.getContent().getBytes());
-				output.close();
+				int length = 0;
+				while ((length = input.read(buf)) != -1) {
+					output.write(buf, 0, length);
+				}
 			} catch (final IOException e) {
 				log.error("Could not write file {}", file.getAbsolutePath(), e);
 			} finally {
 				try {
+					input.close();
+				} catch (final IOException e) {
+					log.error("Could not close input {}", contentFile.getSource(), e);
+				}
+				try {
 					output.close();
 				} catch (final IOException e) {
-					log.error("Could not close file {}", file.getAbsolutePath(), e);
+					log.error("Could not close output file {}", file.getAbsolutePath(), e);
 				}
 			}
 		}
@@ -85,6 +106,24 @@ public class FileOutputProcessor {
 			}
 
 			return path.toString().substring(File.separator.length());
+		}
+
+		private InputStream makeInputStream(final ContentFile file) {
+			try {
+				return file.getContents();
+			} catch (final IOException e) {
+				log.error("Could not open input {}", file.getSource(), e);
+				return null;
+			}
+		}
+
+		private FileOutputStream makeFileOutputStream(final File file) {
+			try {
+				return new FileOutputStream(file);
+			} catch (final FileNotFoundException e) {
+				log.error("Could not open file {}", file.getAbsolutePath(), e);
+				return null;
+			}
 		}
 	}
 

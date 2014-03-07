@@ -1,7 +1,7 @@
 package com.vdxp.ssg.content;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class ContentNode {
 
@@ -12,7 +12,7 @@ public abstract class ContentNode {
 		this.name = name;
 	}
 
-	protected abstract void accept(final ContentVisitor visitor, Deque<ContentNode> parents);
+	protected abstract void accept(final ContentVisitor visitor, List<ContentNode> parents);
 
 	public String getName() {
 		return name;
@@ -39,7 +39,7 @@ public abstract class ContentNode {
 	}
 
 	public void accept(final ContentVisitor visitor) {
-		final Deque<ContentNode> parents = new ArrayDeque<ContentNode>(0);
+		final List<ContentNode> parents = Collections.emptyList();
 		accept(visitor, parents);
 	}
 

@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Deque;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
@@ -49,7 +49,7 @@ public class ContentVisitorTest {
 		}
 
 		@Override
-		public void visit(final TextContentFile contentFile, final Deque<ContentNode> parents) {
+		public void visit(final TextContentFile contentFile, final List<ContentNode> parents) {
 			out.append(parentNames(parents));
 			out.append("/");
 			out.append(contentFile.getName());
@@ -57,7 +57,7 @@ public class ContentVisitorTest {
 		}
 
 		@Override
-		public void visit(final BinaryContentFile contentFile, final Deque<ContentNode> parents) {
+		public void visit(final BinaryContentFile contentFile, final List<ContentNode> parents) {
 			out.append(parentNames(parents));
 			out.append("/");
 			out.append(contentFile.getName());
@@ -66,7 +66,7 @@ public class ContentVisitorTest {
 		}
 
 		@Override
-		public void visit(final ContentDirectory contentDirectory, final Deque<ContentNode> parents) {
+		public void visit(final ContentDirectory contentDirectory, final List<ContentNode> parents) {
 			out.append(parentNames(parents));
 			out.append("/");
 			out.append(contentDirectory.getName());
@@ -74,7 +74,7 @@ public class ContentVisitorTest {
 			out.append("\n");
 		}
 
-		private String parentNames(final Deque<ContentNode> parents) {
+		private String parentNames(final List<ContentNode> parents) {
 			final StringBuilder sb = new StringBuilder();
 			for (final ContentNode node : parents) {
 				sb.append("/");

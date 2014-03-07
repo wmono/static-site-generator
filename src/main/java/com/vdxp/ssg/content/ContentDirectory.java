@@ -1,9 +1,9 @@
 package com.vdxp.ssg.content;
 
-import java.util.ArrayDeque;
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.List;
 
 public class ContentDirectory extends ContentNode {
@@ -50,11 +50,13 @@ public class ContentDirectory extends ContentNode {
 	}
 
 	@Override
-	protected void accept(final ContentVisitor visitor, final Deque<ContentNode> parents) {
-		visitor.visit(this, new ArrayDeque<ContentNode>(parents));
+	protected void accept(final ContentVisitor visitor, final List<ContentNode> parents) {
+		visitor.visit(this, ImmutableList.copyOf(parents));
 
-		final Deque<ContentNode> childParents = new ArrayDeque<ContentNode>(parents);
+		List<ContentNode> childParents = new ArrayList<ContentNode>(parents);
 		childParents.add(this);
+		childParents = ImmutableList.copyOf(childParents);
+
 		for (final ContentNode child : children) {
 			child.accept(visitor, childParents);
 		}

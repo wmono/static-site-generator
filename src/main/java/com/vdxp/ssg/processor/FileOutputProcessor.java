@@ -15,7 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Deque;
+import java.util.List;
 
 public class FileOutputProcessor {
 
@@ -28,7 +28,7 @@ public class FileOutputProcessor {
 	public class FileOutputVisitor implements ContentVisitor {
 
 		@Override
-		public void visit(final ContentDirectory contentDirectory, final Deque<ContentNode> parents) {
+		public void visit(final ContentDirectory contentDirectory, final List<ContentNode> parents) {
 			final String filePath = makeFilePath(parents, contentDirectory);
 			final File file = new File(filePath);
 			if (file.exists()) {
@@ -45,16 +45,16 @@ public class FileOutputProcessor {
 		}
 
 		@Override
-		public void visit(final TextContentFile contentFile, final Deque<ContentNode> parents) {
+		public void visit(final TextContentFile contentFile, final List<ContentNode> parents) {
 			visit((ContentFile) contentFile, parents);
 		}
 
 		@Override
-		public void visit(final BinaryContentFile contentFile, final Deque<ContentNode> parents) {
+		public void visit(final BinaryContentFile contentFile, final List<ContentNode> parents) {
 			visit((ContentFile) contentFile, parents);
 		}
 
-		public void visit(final ContentFile contentFile, final Deque<ContentNode> parents) {
+		public void visit(final ContentFile contentFile, final List<ContentNode> parents) {
 			final String filePath = makeFilePath(parents, contentFile);
 			final File file = new File(filePath);
 			if (file.exists() && !file.isFile()) {

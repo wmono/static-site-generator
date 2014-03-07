@@ -1,7 +1,6 @@
 package com.vdxp.ssg.content;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.List;
 
 public abstract class BinaryContentFile extends ContentFile {
 
@@ -10,8 +9,8 @@ public abstract class BinaryContentFile extends ContentFile {
 	}
 
 	@Override
-	protected void accept(final ContentVisitor visitor, final Deque<ContentNode> parents) {
-		visitor.visit(this, new ArrayDeque<ContentNode>(parents));
+	protected void accept(final ContentVisitor visitor, final List<ContentNode> parents) {
+		visitor.visit(this, parents);
 	}
 
 }

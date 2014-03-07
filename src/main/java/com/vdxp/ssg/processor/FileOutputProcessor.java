@@ -25,7 +25,7 @@ public class FileOutputProcessor {
 		contentNode.accept(new FileOutputVisitor());
 	}
 
-	public class FileOutputVisitor implements ContentVisitor {
+	private class FileOutputVisitor implements ContentVisitor {
 
 		@Override
 		public void visit(final ContentDirectory contentDirectory, final List<ContentNode> parents) {

@@ -28,7 +28,7 @@ public class YamlFrontMatterProcessor {
 			final String[] contentParts = contentFile.getText().split("(?m)^---$\\s*", 3);
 
 			if (contentParts.length < 3 || !contentParts[0].isEmpty()) {
-				log.debug("Skipping {}: No YAML Front Matter detected", contentFile.getSource());
+				log.debug("Skipping {}: No YFM detected", contentFile.getSource());
 				return;
 			}
 
@@ -40,14 +40,14 @@ public class YamlFrontMatterProcessor {
 					@SuppressWarnings("rawtypes")
 					final Map data = (Map) yfmObject;
 
-					log.debug("Pushing YFM data into content node: {}", data);
+					log.debug("Pushing in YFM in {}: {}", contentFile.getSource(), data);
 					contentFile.putData(data);
 					contentFile.setText(contentParts[2]);
 				} else {
-					log.warn("Unexpected YAML Front Matter in {}: {}", contentFile.getSource(), yfmObject);
+					log.warn("Ignoring unexpected YFM in {}: {}", contentFile.getSource(), yfmObject);
 				}
 			} catch (final YamlException e) {
-				log.warn("{} appeared to contain YAML Front Matter but it couldn't be parsed", contentFile.getSource(), e);
+				log.warn("{} appeared to contain YFM but it couldn't be parsed", contentFile.getSource(), e);
 			}
 		}
 

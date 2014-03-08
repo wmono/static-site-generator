@@ -2,7 +2,7 @@ package com.vdxp.ssg.processor;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Template;
-import com.github.jknack.handlebars.io.FileTemplateLoader;
+import com.github.jknack.handlebars.io.AbstractTemplateLoader;
 import com.github.jknack.handlebars.io.StringTemplateSource;
 import com.github.jknack.handlebars.io.TemplateLoader;
 import com.github.jknack.handlebars.io.TemplateSource;
@@ -24,11 +24,8 @@ public class HandlebarsLayoutProcessor {
 	private static final Logger log = LoggerFactory.getLogger(HandlebarsLayoutProcessor.class);
 
 	private final Handlebars handlebars;
-	private final TemplateLoader layoutTemplateLoader;
 
 	public HandlebarsLayoutProcessor() {
-		// TODO ContentNodeTemplateLoader
-		layoutTemplateLoader = new FileTemplateLoader("layout", "");
 		this.handlebars = new Handlebars();
 	}
 
@@ -40,14 +37,15 @@ public class HandlebarsLayoutProcessor {
 
 		log.debug("Initial layout queue: {}", queue);
 
+		final ContentNodeTemplateLoader layoutTemplateLoader = new ContentNodeTemplateLoader(contentTree);
 		while (!queue.isEmpty()) {
 			final LayoutRequest request = queue.removeFirst();
-			final Deque<LayoutRequest> newRequests = applyLayout(request);
+			final Deque<LayoutRequest> newRequests = applyLayout(request, layoutTemplateLoader);
 			queue.addAll(newRequests);
 		}
 	}
 
-	private Deque<LayoutRequest> applyLayout(final LayoutRequest request) {
+	private Deque<LayoutRequest> applyLayout(final LayoutRequest request, final TemplateLoader layoutTemplateLoader) {
 		final Deque<LayoutRequest> queue = new ArrayDeque<LayoutRequest>();
 
 		try {
@@ -117,6 +115,35 @@ public class HandlebarsLayoutProcessor {
 		}
 	}
 
+	private static class ContentNodeTemplateLoader extends AbstractTemplateLoader {
+		private static final Logger log = LoggerFactory.getLogger(ContentNodeTemplateLoader.class);
+		private static final IOException notFound = new IOException();
+
+		private final ContentNode contentTree;
+
+		public ContentNodeTemplateLoader(final ContentNode contentTree) {
+			this.contentTree = contentTree;
+			setPrefix("layout/");
+			setSuffix("");
+		}
+
+		@Override
+		public TemplateSource sourceAt(final String location) throws IOException {
+			final String resolvedLocation = resolve(location);
+			final ContentNode sourceContentNode = contentTree.getPath(resolvedLocation);
+			if (sourceContentNode == null) {
+				log.debug("Did not find {} in content tree", resolvedLocation);
+				throw notFound;
+			}
+			if (!(sourceContentNode instanceof TextContentFile)) {
+				log.warn("Content tree path {} is not a template: {}", resolvedLocation, sourceContentNode);
+				throw notFound;
+			}
+			log.debug("Found template {}", resolvedLocation);
+			return new StringTemplateSource(resolvedLocation, ((TextContentFile) sourceContentNode).getText());
+		}
+	}
+
 	private static class BodyPartialTemplateLoader implements TemplateLoader {
 
 		private static final IOException notFound = new IOException();
@@ -150,6 +177,7 @@ public class HandlebarsLayoutProcessor {
 		public String getSuffix() {
 			return "";
 		}
+
 	}
 
 }

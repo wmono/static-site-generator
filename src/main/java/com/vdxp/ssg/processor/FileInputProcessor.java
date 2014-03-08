@@ -19,6 +19,7 @@ public class FileInputProcessor {
 	private static final Logger log = LoggerFactory.getLogger(FileInputProcessor.class);
 
 	private static final String[] textFileExtensions = {
+			".hbs",
 			".html",
 			".md",
 			".txt",

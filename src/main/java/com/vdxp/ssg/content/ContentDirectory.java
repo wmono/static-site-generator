@@ -34,6 +34,16 @@ public class ContentDirectory extends ContentNode {
 		child.clearParent();
 	}
 
+	@Override
+	protected ContentNode getChildByName(final String name) {
+		for (final ContentNode child : children) {
+			if (name.equals(child.getName())) {
+				return child;
+			}
+		}
+		return null;
+	}
+
 	public Collection<ContentNode> getChildren() {
 		return new ArrayList<ContentNode>(children);
 	}

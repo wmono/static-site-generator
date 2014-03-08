@@ -67,6 +67,25 @@ public class FileInputProcessor {
 		}
 	}
 
+	private static String getBasename(final File file) {
+		final String filename = file.getName();
+		final int dotPosition = filename.indexOf('.');
+		if (dotPosition == -1) {
+			return filename;
+		} else {
+			return filename.substring(0, dotPosition);
+		}
+	}
+
+	private static String[] getExtensions(final File file) {
+		final String filename = file.getName();
+		final String[] filenameParts = filename.split("\\.");
+
+		final String[] extensions = new String[filenameParts.length - 1];
+		System.arraycopy(filenameParts, 1, extensions, 0, filenameParts.length - 1);
+		return extensions;
+	}
+
 	private static boolean fileHasTextExtension(final File file) {
 		final String filename = file.getName();
 		final int dotPosition = filename.lastIndexOf('.');
@@ -87,7 +106,7 @@ public class FileInputProcessor {
 		private final File sourceFile;
 
 		public FileInputBinaryContentFile(final File sourceFile) {
-			super(sourceFile.getName());
+			super(FileInputProcessor.getBasename(sourceFile), FileInputProcessor.getExtensions(sourceFile));
 			this.sourceFile = sourceFile;
 		}
 
@@ -110,7 +129,7 @@ public class FileInputProcessor {
 		private final File sourceFile;
 
 		public FileInputTextContentFile(final File sourceFile) {
-			super(sourceFile.getName());
+			super(FileInputProcessor.getBasename(sourceFile), FileInputProcessor.getExtensions(sourceFile));
 			this.sourceFile = sourceFile;
 			setText(readSourceFile());
 		}

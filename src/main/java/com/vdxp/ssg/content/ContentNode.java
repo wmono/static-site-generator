@@ -9,24 +9,13 @@ import java.util.Map;
 
 public abstract class ContentNode {
 
-	private String name;
 	private ContentNode parent;
 
 	private final Map data = new HashMap();
 
-	public ContentNode(final String name) {
-		this.name = name;
-	}
-
 	protected abstract void accept(final ContentVisitor visitor, List<ContentNode> parents);
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
+	public abstract String getName();
 
 	public ContentNode getParent() {
 		return parent;

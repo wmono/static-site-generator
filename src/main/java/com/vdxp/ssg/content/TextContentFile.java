@@ -8,8 +8,8 @@ public abstract class TextContentFile extends ContentFile {
 
 	private String text;
 
-	public TextContentFile(final String name) {
-		super(name);
+	public TextContentFile(final String basename, final String... extensions) {
+		super(basename, extensions);
 	}
 
 	public String getText() {

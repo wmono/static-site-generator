@@ -4,8 +4,8 @@ import java.util.List;
 
 public abstract class BinaryContentFile extends ContentFile {
 
-	public BinaryContentFile(final String name) {
-		super(name);
+	public BinaryContentFile(final String basename, final String... extensions) {
+		super(basename, extensions);
 	}
 
 	@Override

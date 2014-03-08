@@ -10,8 +10,10 @@ public class ContentDirectory extends ContentNode {
 
 	private final List<ContentNode> children = new ArrayList<ContentNode>();
 
+	private String name;
+
 	public ContentDirectory(final String name) {
-		super(name);
+		this.name = name;
 	}
 
 	public void addChild(final ContentNode child) {
@@ -60,6 +62,15 @@ public class ContentDirectory extends ContentNode {
 		for (final ContentNode child : children) {
 			child.accept(visitor, childParents);
 		}
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
 	}
 
 }

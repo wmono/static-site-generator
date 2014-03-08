@@ -3,6 +3,7 @@ package com.vdxp.ssg;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.processor.FileInputProcessor;
 import com.vdxp.ssg.processor.FileOutputProcessor;
+import com.vdxp.ssg.processor.HandlebarsLayoutProcessor;
 import com.vdxp.ssg.processor.MarkdownProcessor;
 import com.vdxp.ssg.processor.YamlFrontMatterProcessor;
 
@@ -16,6 +17,7 @@ public class Driver {
 		target.merge(blog);
 		new YamlFrontMatterProcessor().process(target);
 		new MarkdownProcessor().process(target);
+		new HandlebarsLayoutProcessor().process(target);
 		new FileOutputProcessor().writeContentRoot(target);
 	}
 

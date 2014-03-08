@@ -6,6 +6,7 @@ import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentNode;
 import com.vdxp.ssg.content.ContentVisitor;
 import com.vdxp.ssg.content.TextContentFile;
+import org.pegdown.Extensions;
 import org.pegdown.PegDownProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,9 @@ public class MarkdownProcessor {
 	private final PegDownProcessor pegdown;
 
 	public MarkdownProcessor() {
-		pegdown = new PegDownProcessor();
+		final int pegdownOptions = Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS | Extensions.STRIKETHROUGH | Extensions.TABLES;
+		pegdown = new PegDownProcessor(pegdownOptions);
+
 	}
 
 	public void process(final ContentNode content) {

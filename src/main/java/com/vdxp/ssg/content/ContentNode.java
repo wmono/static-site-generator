@@ -1,12 +1,18 @@
 package com.vdxp.ssg.content;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class ContentNode {
 
 	private String name;
 	private ContentNode parent;
+
+	private final Map data = new HashMap();
 
 	public ContentNode(final String name) {
 		this.name = name;
@@ -36,6 +42,16 @@ public abstract class ContentNode {
 
 	public void clearParent() {
 		this.parent = null;
+	}
+
+	@SuppressWarnings("rawtypes")
+	public void putData(final Map data) {
+		this.data.putAll(data);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public Map getData() {
+		return ImmutableMap.copyOf(data);
 	}
 
 	public void accept(final ContentVisitor visitor) {

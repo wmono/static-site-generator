@@ -62,7 +62,7 @@ public class FileOutputProcessor {
 				return;
 			}
 
-			log.debug("Writing {} to {}", contentFile.getSource(), filePath);
+			log.debug("Writing {} to {}", contentFile, filePath);
 
 			final InputStream input = makeInputStream(contentFile);
 			final FileOutputStream output = makeFileOutputStream(file);
@@ -84,7 +84,7 @@ public class FileOutputProcessor {
 				try {
 					input.close();
 				} catch (final IOException e) {
-					log.error("Could not close input {}", contentFile.getSource(), e);
+					log.error("Could not close input {}", contentFile, e);
 				}
 				try {
 					output.close();
@@ -112,7 +112,7 @@ public class FileOutputProcessor {
 			try {
 				return file.getContents();
 			} catch (final IOException e) {
-				log.error("Could not open input {}", file.getSource(), e);
+				log.error("Could not open input {}", file, e);
 				return null;
 			}
 		}

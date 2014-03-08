@@ -47,4 +47,9 @@ public abstract class ContentFile extends ContentNode {
 		this.extensions = extensions;
 	}
 
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" + getSource() + "}";
+	}
+
 }

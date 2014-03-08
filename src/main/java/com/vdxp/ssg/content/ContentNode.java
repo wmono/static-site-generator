@@ -11,6 +11,7 @@ public abstract class ContentNode {
 
 	private ContentNode parent;
 
+	@SuppressWarnings("rawtypes")
 	private final Map data = new HashMap();
 
 	protected abstract ContentNode getChildByName(final String name);

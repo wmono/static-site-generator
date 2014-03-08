@@ -47,6 +47,10 @@ public class FileInputProcessor {
 
 		for (final File entry : directoryEntries) {
 			if (entry.isFile()) {
+				if (entry.getName().startsWith(".")) {
+					log.debug("Skipping dotfile {}", entry);
+					continue;
+				}
 				final ContentFile entryFile = makeContentFile(entry);
 				contentDirectory.addChild(entryFile);
 			}

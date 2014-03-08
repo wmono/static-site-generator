@@ -52,6 +52,7 @@ public class FileInputProcessor {
 					log.debug("Skipping dotfile {}", entry);
 					continue;
 				}
+				log.debug("Loading {}", entry);
 				final ContentFile entryFile = makeContentFile(entry);
 				contentDirectory.addChild(entryFile);
 			}

@@ -3,6 +3,8 @@ package com.vdxp.ssg.processor;
 import com.vdxp.ssg.content.BinaryContentFile;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentFile;
+import com.vdxp.ssg.content.ContentNode;
+import com.vdxp.ssg.content.ContentVisitor;
 import com.vdxp.ssg.content.TextContentFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class FileInputProcessor {
 
@@ -28,7 +31,9 @@ public class FileInputProcessor {
 	public ContentDirectory readContentRoot(final String contentRootPath) throws IOException {
 		final File contentRootFile = new File(contentRootPath);
 		if (contentRootFile.isDirectory()) {
-			return readDirectory(contentRootFile);
+			final ContentDirectory contentRoot = readDirectory(contentRootFile);
+			contentRoot.accept(new ContentRootAnnotatingVisitor(contentRootPath));
+			return contentRoot;
 		}
 		if (contentRootFile.exists()) {
 			throw new IOException("Content root " + contentRootFile.getAbsolutePath() + " is not a directory");
@@ -185,4 +190,32 @@ public class FileInputProcessor {
 			}
 		}
 	}
+
+	private static class ContentRootAnnotatingVisitor implements ContentVisitor {
+		private final String contentRoot;
+
+		public ContentRootAnnotatingVisitor(final String contentRoot) {
+			this.contentRoot = contentRoot;
+		}
+
+		@Override
+		public void visit(final ContentDirectory contentDirectory, final List<ContentNode> parents) {
+			visit((ContentNode) contentDirectory, parents);
+		}
+
+		@Override
+		public void visit(final BinaryContentFile contentFile, final List<ContentNode> parents) {
+			visit((ContentNode) contentFile, parents);
+		}
+
+		@Override
+		public void visit(final TextContentFile contentFile, final List<ContentNode> parents) {
+			visit((ContentNode) contentFile, parents);
+		}
+
+		private void visit(final ContentNode contentNode, final List<ContentNode> parents) {
+			contentNode.putData("contentRoot", contentRoot);
+		}
+	}
+
 }

@@ -41,6 +41,10 @@ public abstract class ContentNode {
 		this.data.putAll(data);
 	}
 
+	public void putData(final Object key, final Object value) {
+		this.data.put(key, value);
+	}
+
 	@SuppressWarnings("rawtypes")
 	public Map getData() {
 		return ImmutableMap.copyOf(data);

@@ -1,10 +1,9 @@
 package com.vdxp.ssg.processor;
 
+import com.github.jknack.handlebars.Context;
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Template;
-import com.github.jknack.handlebars.io.AbstractTemplateLoader;
 import com.github.jknack.handlebars.io.StringTemplateSource;
-import com.github.jknack.handlebars.io.TemplateLoader;
 import com.github.jknack.handlebars.io.TemplateSource;
 import com.vdxp.ssg.content.BinaryContentFile;
 import com.vdxp.ssg.content.ContentDirectory;
@@ -15,78 +14,91 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HandlebarsLayoutProcessor {
 
 	private static final Logger log = LoggerFactory.getLogger(HandlebarsLayoutProcessor.class);
 
-	private final Handlebars handlebars;
-
-	public HandlebarsLayoutProcessor() {
-		this.handlebars = new Handlebars();
+	public void process(final ContentNode contentTree, final ContentNode layoutContentTree) {
+		contentTree.accept(new HandlebarsLayoutVisitor(layoutContentTree));
 	}
 
-	public void process(final ContentNode contentTree) {
-		final Deque<LayoutRequest> queue;
-		final HandlebarsLayoutInitializeQueueVisitor visitor = new HandlebarsLayoutInitializeQueueVisitor();
-		contentTree.accept(visitor);
-		queue = visitor.getQueue();
+	private static class HandlebarsLayoutVisitor implements ContentVisitor {
 
-		log.debug("Initial layout queue: {}", queue);
+		private final Handlebars handlebars;
 
-		final ContentNodeTemplateLoader layoutTemplateLoader = new ContentNodeTemplateLoader(contentTree);
-		while (!queue.isEmpty()) {
-			final LayoutRequest request = queue.removeFirst();
-			final Deque<LayoutRequest> newRequests = applyLayout(request, layoutTemplateLoader);
-			queue.addAll(newRequests);
-		}
-	}
+		private final ContentNode layoutContentTree;
 
-	private Deque<LayoutRequest> applyLayout(final LayoutRequest request, final TemplateLoader layoutTemplateLoader) {
-		final Deque<LayoutRequest> queue = new ArrayDeque<LayoutRequest>();
-
-		try {
-			handlebars.with(new BodyPartialTemplateLoader(request.content.getText()), layoutTemplateLoader);
-			final Template template = handlebars.compile(request.layout);
-			final String output = template.apply(request.content.getData());
-			request.content.setText(output);
-		} catch (final IOException e) {
-			log.error("Could not apply template {} to {}", request.layout, request.content, e);
-		}
-
-		return queue;
-	}
-
-	private static class HandlebarsLayoutInitializeQueueVisitor implements ContentVisitor {
-
-		private final Deque<LayoutRequest> queue = new ArrayDeque<LayoutRequest>();
-
-		public Deque<LayoutRequest> getQueue() {
-			return queue;
+		public HandlebarsLayoutVisitor(final ContentNode layoutContentTree) {
+			this.handlebars = new Handlebars();
+			this.layoutContentTree = layoutContentTree;
 		}
 
 		@Override
 		public void visit(final TextContentFile contentFile, final List<ContentNode> parents) {
-			String layout = null;
-			for (final ContentNode parent : parents) {
-				layout = getNextLayout(parent, layout);
-			}
-			layout = getNextLayout(contentFile, layout);
-
+			final String layout = computeLayoutForContent(contentFile);
 			if (layout != null) {
-				queue.addLast(new LayoutRequest(contentFile, layout));
+				applyLayouts(contentFile, layout);
 			}
 		}
 
-		private static String getNextLayout(final ContentNode node, final String previousLayout) {
-			final Object layout = node.getData().get("layout");
-			if (layout instanceof String) {
-				return (String) layout;
+		private static String computeLayoutForContent(final TextContentFile contentFile) {
+			ContentNode nextNode = contentFile;
+
+			while (nextNode != null) {
+				final Object nextLayout = nextNode.getData().get("layout");
+				if (nextLayout instanceof String) {
+					return (String) nextLayout;
+				}
+				nextNode = nextNode.getParent();
 			}
-			return previousLayout;
+			return null;
+		}
+
+		private void applyLayouts(final TextContentFile content, final String layoutPath) {
+			if (layoutPath == null) {
+				return;
+			}
+
+			final TextContentFile templateContentFile = getTemplateByPath(layoutPath, layoutContentTree);
+			if (templateContentFile == null) {
+				return;
+			}
+
+			final Map<String, Object> contentContextMap = new HashMap<String, Object>();
+			contentContextMap.put("content", content.getText());
+			final Context context = Context.newBuilder(content.getData()).combine(contentContextMap).build();
+
+			try {
+				log.debug("Applying template {} to {}", templateContentFile, content);
+
+				final TemplateSource layoutTemplateSource = new StringTemplateSource(layoutPath, templateContentFile.getText());
+				final Template layoutTemplate = handlebars.compile(layoutTemplateSource);
+
+				final String newText = layoutTemplate.apply(context);
+				content.setText(newText);
+
+				final String nextTemplate = computeLayoutForContent(templateContentFile);
+				applyLayouts(content, nextTemplate);
+			} catch (final IOException e) {
+				log.warn("Could not apply template {} to {}", templateContentFile, content, e);
+			}
+		}
+
+		private static TextContentFile getTemplateByPath(final String path, final ContentNode contentTree) {
+			final ContentNode contentNode = contentTree.getPath(path);
+			if (contentNode == null) {
+				log.warn("Template path {} not found in content tree", path);
+				return null;
+			}
+			if (!(contentNode instanceof TextContentFile)) {
+				log.warn("Template path {} found but is not a template: {}", path, contentNode);
+				return null;
+			}
+			return (TextContentFile) contentNode;
 		}
 
 		@Override
@@ -98,86 +110,6 @@ public class HandlebarsLayoutProcessor {
 		public void visit(final BinaryContentFile contentFile, final List<ContentNode> parents) {
 			/* Do nothing */
 		}
-	}
-
-	private static class LayoutRequest {
-		public final TextContentFile content;
-		public final String layout;
-
-		private LayoutRequest(final TextContentFile content, final String layout) {
-			this.content = content;
-			this.layout = layout;
-		}
-
-		@Override
-		public String toString() {
-			return this.content.toString() + "->" + this.layout;
-		}
-	}
-
-	private static class ContentNodeTemplateLoader extends AbstractTemplateLoader {
-		private static final Logger log = LoggerFactory.getLogger(ContentNodeTemplateLoader.class);
-		private static final IOException notFound = new IOException();
-
-		private final ContentNode contentTree;
-
-		public ContentNodeTemplateLoader(final ContentNode contentTree) {
-			this.contentTree = contentTree;
-			setPrefix("layout/");
-			setSuffix("");
-		}
-
-		@Override
-		public TemplateSource sourceAt(final String location) throws IOException {
-			final String resolvedLocation = resolve(location);
-			final ContentNode sourceContentNode = contentTree.getPath(resolvedLocation);
-			if (sourceContentNode == null) {
-				log.debug("Did not find {} in content tree", resolvedLocation);
-				throw notFound;
-			}
-			if (!(sourceContentNode instanceof TextContentFile)) {
-				log.warn("Content tree path {} is not a template: {}", resolvedLocation, sourceContentNode);
-				throw notFound;
-			}
-			log.debug("Found template {}", resolvedLocation);
-			return new StringTemplateSource(resolvedLocation, ((TextContentFile) sourceContentNode).getText());
-		}
-	}
-
-	private static class BodyPartialTemplateLoader implements TemplateLoader {
-
-		private static final IOException notFound = new IOException();
-
-		private final String body;
-
-		public BodyPartialTemplateLoader(final String body) {
-			this.body = body;
-		}
-
-		@Override
-		public TemplateSource sourceAt(final String location) throws IOException {
-			if (location.equals("body")) {
-				return new StringTemplateSource("body", body);
-			} else {
-				throw notFound;
-			}
-		}
-
-		@Override
-		public String resolve(final String location) {
-			return location;
-		}
-
-		@Override
-		public String getPrefix() {
-			return "";
-		}
-
-		@Override
-		public String getSuffix() {
-			return "";
-		}
-
 	}
 
 }

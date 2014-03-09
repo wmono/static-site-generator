@@ -21,11 +21,12 @@ public class Driver {
 			node.putData("layout", "blog.hbs");
 		}
 		target.merge(blog);
-		target.addChild(layout);
 
 		new YamlFrontMatterProcessor().process(target);
+		new YamlFrontMatterProcessor().process(layout);
 		new MarkdownProcessor().process(target);
-		new HandlebarsLayoutProcessor().process(target);
+
+		new HandlebarsLayoutProcessor().process(target, layout);
 		new FileOutputProcessor().writeContentRoot(target);
 	}
 

@@ -2,6 +2,7 @@ package com.vdxp.ssg;
 
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentNode;
+import com.vdxp.ssg.processor.BlogPagesGeneratorProcessor;
 import com.vdxp.ssg.processor.FileInputProcessor;
 import com.vdxp.ssg.processor.FileOutputProcessor;
 import com.vdxp.ssg.processor.HandlebarsLayoutProcessor;
@@ -25,6 +26,8 @@ public class Driver {
 		new YamlFrontMatterProcessor().process(target);
 		new YamlFrontMatterProcessor().process(layout);
 		new MarkdownProcessor().process(target);
+
+		new BlogPagesGeneratorProcessor().process(target);
 
 		new HandlebarsLayoutProcessor().process(target, layout);
 		new FileOutputProcessor().writeContentRoot(target);

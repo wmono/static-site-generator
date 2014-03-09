@@ -27,7 +27,8 @@ public class Driver {
 		new YamlFrontMatterProcessor().process(layout);
 		new MarkdownProcessor().process(target);
 
-		new BlogPagesGeneratorProcessor().process(target);
+		final ContentNode blogPages = new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
+		target.addChild(blogPages);
 
 		new HandlebarsLayoutProcessor().process(target, layout);
 		new FileOutputProcessor().writeContentRoot(target);

@@ -51,10 +51,12 @@ public class HandlebarsLayoutProcessor {
 			while (nextNode != null) {
 				final Object nextLayout = nextNode.getData().get("layout");
 				if (nextLayout instanceof String) {
+					log.debug("Next layout for {} is {}", contentFile, nextLayout);
 					return (String) nextLayout;
 				}
 				nextNode = nextNode.getParent();
 			}
+			log.debug("No more layouts for {}", contentFile);
 			return null;
 		}
 
@@ -63,8 +65,9 @@ public class HandlebarsLayoutProcessor {
 				return;
 			}
 
-			final TextContentFile templateContentFile = getTemplateByPath(layoutPath, layoutContentTree);
-			if (templateContentFile == null) {
+			final TextContentFile layoutContentFile = getLayoutByPath(layoutPath, layoutContentTree);
+			if (layoutContentFile == null) {
+				log.warn("Could not apply layout {} to {}", layoutPath, content);
 				return;
 			}
 
@@ -73,29 +76,29 @@ public class HandlebarsLayoutProcessor {
 			final Context context = Context.newBuilder(content.getData()).combine(contentContextMap).build();
 
 			try {
-				log.debug("Applying template {} to {}", templateContentFile, content);
+				log.debug("Applying layout {} to {}", layoutContentFile, content);
 
-				final TemplateSource layoutTemplateSource = new StringTemplateSource(layoutPath, templateContentFile.getText());
+				final TemplateSource layoutTemplateSource = new StringTemplateSource(layoutPath, layoutContentFile.getText());
 				final Template layoutTemplate = handlebars.compile(layoutTemplateSource);
 
 				final String newText = layoutTemplate.apply(context);
 				content.setText(newText);
 
-				final String nextTemplate = computeLayoutForContent(templateContentFile);
-				applyLayouts(content, nextTemplate);
+				final String nextLayoutPath = computeLayoutForContent(layoutContentFile);
+				applyLayouts(content, nextLayoutPath);
 			} catch (final IOException e) {
-				log.warn("Could not apply template {} to {}", templateContentFile, content, e);
+				log.warn("Could not apply layout {} to {}", layoutContentFile, content, e);
 			}
 		}
 
-		private static TextContentFile getTemplateByPath(final String path, final ContentNode contentTree) {
-			final ContentNode contentNode = contentTree.getPath(path);
+		private static TextContentFile getLayoutByPath(final String layoutPath, final ContentNode contentTree) {
+			final ContentNode contentNode = contentTree.getPath(layoutPath);
 			if (contentNode == null) {
-				log.warn("Template path {} not found in content tree", path);
+				log.warn("Layout path {} not found in content tree", layoutPath);
 				return null;
 			}
 			if (!(contentNode instanceof TextContentFile)) {
-				log.warn("Template path {} found but is not a template: {}", path, contentNode);
+				log.warn("Layout path {} found but is not a layout: {}", layoutPath, contentNode);
 				return null;
 			}
 			return (TextContentFile) contentNode;

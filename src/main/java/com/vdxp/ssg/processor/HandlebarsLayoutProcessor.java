@@ -92,7 +92,7 @@ public class HandlebarsLayoutProcessor {
 		}
 
 		private static TextContentFile getLayoutByPath(final String layoutPath, final ContentDirectory contentTree) {
-			final ContentNode contentNode = contentTree.getPath(layoutPath);
+			final ContentNode contentNode = contentTree.getPath(layoutPath, false);
 			if (contentNode == null) {
 				log.warn("Layout path {} not found in content tree", layoutPath);
 				return null;

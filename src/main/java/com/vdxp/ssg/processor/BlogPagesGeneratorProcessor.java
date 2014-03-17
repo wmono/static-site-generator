@@ -31,12 +31,11 @@ public class BlogPagesGeneratorProcessor {
 
 	public ContentDirectory process(final ContentNode contentTree) {
 		final List<TextContentFile> contentPages = getPages(contentTree);
-		final List<BlogPageContentFile> blogPages = generateBlogPages(contentPages);
+		final List<BlogPageContentFile> blogPages = generateBlogPages(contentPages, options);
 
 		final ContentDirectory content = new ContentDirectory("blog");
-		for (final BlogPageContentFile page : blogPages) {
-			content.addChild(page);
-		}
+		insertBlogPages(blogPages, content, options);
+		linkBlogPages(blogPages);
 
 		return content;
 	}
@@ -47,7 +46,7 @@ public class BlogPagesGeneratorProcessor {
 		return visitor.getPages();
 	}
 
-	private List<BlogPageContentFile> generateBlogPages(final List<TextContentFile> contentPages) {
+	private static List<BlogPageContentFile> generateBlogPages(final List<TextContentFile> contentPages, final Options options) {
 		final ArrayList<BlogPageContentFile> blogPages = new ArrayList<BlogPageContentFile>();
 
 		Collections.sort(contentPages, new ContentNodeDateComparator());
@@ -84,6 +83,44 @@ public class BlogPagesGeneratorProcessor {
 		blogPage.putData(pageData);
 		log.debug("Generated {}", blogPage);
 		return blogPage;
+	}
+
+	private static void insertBlogPages(final List<BlogPageContentFile> blogPages, final ContentDirectory target, final Options options) {
+		for (final BlogPageContentFile blogPage : blogPages) {
+			final String pagePath = options.getPagePath(blogPage.pageNumber);
+
+			log.debug("Putting {} into {}", blogPage, pagePath);
+
+			final String pageBasename;
+			final ContentDirectory pageDirectory;
+			final int pagePathLastSlash = pagePath.lastIndexOf('/');
+			if (pagePathLastSlash == -1) {
+				pageBasename = pagePath;
+				pageDirectory = target;
+			} else {
+				pageBasename = pagePath.substring(pagePathLastSlash + 1);
+				pageDirectory = (ContentDirectory) target.getPath(pagePath.substring(0, pagePathLastSlash), true);
+			}
+
+			blogPage.setBasename(pageBasename);
+			pageDirectory.addChild(blogPage);
+		}
+	}
+
+	private static void linkBlogPages(final List<BlogPageContentFile> blogPages) {
+		for (int i = 0; i < blogPages.size(); i++) {
+			final BlogPageContentFile page = blogPages.get(i);
+
+			@SuppressWarnings("unchecked")
+			final Map<String, Object> data = (Map<String, Object>) page.getData().get("blogPage");
+
+			if (i > 0) {
+				data.put("previousUrl", page.getRelativePath(blogPages.get(i - 1)));
+			}
+			if (i < blogPages.size() - 1) {
+				data.put("nextUrl", page.getRelativePath(blogPages.get(i + 1)));
+			}
+		}
 	}
 
 	private static class BlogPageCollectionVisitor implements ContentVisitor {
@@ -138,7 +175,7 @@ public class BlogPagesGeneratorProcessor {
 		}
 
 		private String getPagePath(final int pageNumber) {
-			if (pageNumber == 0) {
+			if (pageNumber == 1) {
 				return String.format(firstPagePattern, pageNumber);
 			} else {
 				return String.format(pagePattern, pageNumber);

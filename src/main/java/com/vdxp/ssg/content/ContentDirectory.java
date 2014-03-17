@@ -64,24 +64,35 @@ public class ContentDirectory extends ContentNode {
 		return null;
 	}
 
-	public ContentNode getPath(final String path) {
+	public ContentNode getPath(final String path, final boolean makeMissingDirectories) {
 		final String[] pathParts = path.split("/", 2);
 		if (pathParts.length == 0) {
 			log.warn("Attempting to get empty path", new Exception());
 			return null;
 		}
-		if (pathParts.length == 1) {
-			return getChildByName(pathParts[0]);
-		}
-		if (pathParts.length == 2) {
-			final ContentNode child = getChildByName(pathParts[0]);
 
-			if (child instanceof ContentDirectory) {
-				return ((ContentDirectory) child).getPath(pathParts[1]);
-			} else {
-				return null;
+		if (pathParts.length == 1) {
+			ContentNode child = getChildByName(pathParts[0]);
+			if (child == null && makeMissingDirectories) {
+				child = new ContentDirectory(pathParts[0]);
+				addChild(child);
 			}
+			return child;
 		}
+
+		if (pathParts.length == 2) {
+			ContentNode child = getChildByName(pathParts[0]);
+
+			if (child == null && makeMissingDirectories) {
+				child = new ContentDirectory(pathParts[0]);
+				addChild(child);
+			}
+			if (child instanceof ContentDirectory) {
+				return ((ContentDirectory) child).getPath(pathParts[1], makeMissingDirectories);
+			}
+			return null;
+		}
+
 		throw new IndexOutOfBoundsException("split returned too many elements");
 	}
 

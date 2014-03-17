@@ -92,17 +92,6 @@ public class BlogPagesGeneratorProcessor {
 		return "(not implemented)";
 	}
 
-	private static class ContentNodeDateComparator implements Comparator<ContentNode> {
-		@Override
-		public int compare(final ContentNode left, final ContentNode right) {
-			final Object leftDateObject = left.getData().get("date_raw");
-			final Object rightDateObject = right.getData().get("date_raw");
-			final Long leftDate = leftDateObject instanceof Long ? (Long) leftDateObject : Long.MAX_VALUE;
-			final Long rightDate = rightDateObject instanceof Long ? (Long) rightDateObject : Long.MAX_VALUE;
-			return rightDate.compareTo(leftDate);
-		}
-	}
-
 	private static class BlogPageCollectionVisitor implements ContentVisitor {
 		private final List<TextContentFile> pages = new ArrayList<TextContentFile>();
 
@@ -125,10 +114,6 @@ public class BlogPagesGeneratorProcessor {
 		public List<TextContentFile> getPages() {
 			return pages;
 		}
-	}
-
-	private static int divideRoundUp(final int numerator, final int denominator) {
-		return (numerator + denominator - 1) / denominator;
 	}
 
 	public static class Options {
@@ -181,6 +166,21 @@ public class BlogPagesGeneratorProcessor {
 			return "Generated blog page " + pageNumber;
 		}
 
+	}
+
+	private static class ContentNodeDateComparator implements Comparator<ContentNode> {
+		@Override
+		public int compare(final ContentNode left, final ContentNode right) {
+			final Object leftDateObject = left.getData().get("date_raw");
+			final Object rightDateObject = right.getData().get("date_raw");
+			final Long leftDate = leftDateObject instanceof Long ? (Long) leftDateObject : Long.MAX_VALUE;
+			final Long rightDate = rightDateObject instanceof Long ? (Long) rightDateObject : Long.MAX_VALUE;
+			return rightDate.compareTo(leftDate);
+		}
+	}
+
+	private static int divideRoundUp(final int numerator, final int denominator) {
+		return (numerator + denominator - 1) / denominator;
 	}
 
 }

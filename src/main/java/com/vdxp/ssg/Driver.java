@@ -8,6 +8,7 @@ import com.vdxp.ssg.processor.FileInputProcessor;
 import com.vdxp.ssg.processor.FileOutputProcessor;
 import com.vdxp.ssg.processor.HandlebarsLayoutProcessor;
 import com.vdxp.ssg.processor.MarkdownProcessor;
+import com.vdxp.ssg.processor.SplitReadMoreProcessor;
 import com.vdxp.ssg.processor.YamlFrontMatterProcessor;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class Driver {
 		new YamlFrontMatterProcessor().process(layout);
 		new DateParsingProcessor("date").process(target);
 		new MarkdownProcessor().process(target);
+		new SplitReadMoreProcessor().process(target);
 		new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
 
 		new HandlebarsLayoutProcessor().process(target, layout);

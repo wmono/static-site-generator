@@ -26,7 +26,6 @@ public class MarkdownProcessor {
 	public MarkdownProcessor() {
 		final int pegdownOptions = Extensions.AUTOLINKS | Extensions.FENCED_CODE_BLOCKS | Extensions.STRIKETHROUGH | Extensions.TABLES;
 		pegdown = new PegDownProcessor(pegdownOptions);
-
 	}
 
 	public void process(final ContentNode content) {

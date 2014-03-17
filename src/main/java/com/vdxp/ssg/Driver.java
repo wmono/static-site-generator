@@ -29,8 +29,8 @@ public class Driver {
 		new DateParsingProcessor("date").process(target);
 		new MarkdownProcessor().process(target);
 
-		final ContentNode blogPages = new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
-		target.addChild(blogPages);
+		final ContentDirectory blogPages = new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
+		target.merge(blogPages);
 
 		new HandlebarsLayoutProcessor().process(target, layout);
 		new FileOutputProcessor().writeContentRoot(target);

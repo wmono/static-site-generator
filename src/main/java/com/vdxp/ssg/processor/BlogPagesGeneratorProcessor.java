@@ -29,9 +29,16 @@ public class BlogPagesGeneratorProcessor {
 		this.options = options;
 	}
 
-	public ContentNode process(final ContentNode contentTree) {
-		final List<TextContentFile> pages = getPages(contentTree);
-		return generateBlogPages(pages);
+	public ContentDirectory process(final ContentNode contentTree) {
+		final List<TextContentFile> contentPages = getPages(contentTree);
+		final List<BlogPageContentFile> blogPages = generateBlogPages(contentPages);
+
+		final ContentDirectory content = new ContentDirectory("blog");
+		for (final BlogPageContentFile page : blogPages) {
+			content.addChild(page);
+		}
+
+		return content;
 	}
 
 	private static List<TextContentFile> getPages(final ContentNode contentTree) {
@@ -40,56 +47,43 @@ public class BlogPagesGeneratorProcessor {
 		return visitor.getPages();
 	}
 
-	private ContentNode generateBlogPages(final List<TextContentFile> posts) {
-		final ContentDirectory blogPages = new ContentDirectory("blog");
+	private List<BlogPageContentFile> generateBlogPages(final List<TextContentFile> contentPages) {
+		final ArrayList<BlogPageContentFile> blogPages = new ArrayList<BlogPageContentFile>();
 
-		Collections.sort(posts, new ContentNodeDateComparator());
+		Collections.sort(contentPages, new ContentNodeDateComparator());
 
-		final int numPages = divideRoundUp(posts.size(), options.numberOfPostsPerPage);
-		for (int pageNum = 1; pageNum <= numPages; pageNum++) {
+		final int numPages = divideRoundUp(contentPages.size(), options.numberOfPostsPerPage);
+		for (int pageNumber = 1; pageNumber <= numPages; pageNumber++) {
 			/* pageNum is 1=indexed for human consumption */
-			final int minIndex = (pageNum - 1) * options.numberOfPostsPerPage;
-			final int maxIndex = Math.min(pageNum * options.numberOfPostsPerPage, posts.size());
-			final List<TextContentFile> pageSlice = posts.subList(minIndex, maxIndex);
-			blogPages.addChild(generateBlogPage(pageSlice, pageNum, numPages)); // TODO place in tree
+			final int minIndex = (pageNumber - 1) * options.numberOfPostsPerPage;
+			final int maxIndex = Math.min(pageNumber * options.numberOfPostsPerPage, contentPages.size());
+			final List<TextContentFile> pageSlice = contentPages.subList(minIndex, maxIndex);
+			blogPages.add(generateBlogPage(pageSlice, pageNumber));
 		}
 
 		return blogPages;
 	}
 
-	private TextContentFile generateBlogPage(final List<TextContentFile> posts, final int pageNumber, final int numberOfPages) {
-		// FIXME This makes assumptions about what the Driver will do with the ContentNode that is produced
-		final String thisUrl = options.getPagePath(pageNumber);
-		final String previousUrl = (pageNumber > 1) ? relativePath(thisUrl, options.getPagePath(pageNumber - 1)) : null;
-		final String nextUrl = (pageNumber < numberOfPages) ? relativePath(thisUrl, options.getPagePath(pageNumber + 1)) : null;
-
-		final List<Map<String, Object>> pagesContentList = new ArrayList<Map<String, Object>>();
-		for (final TextContentFile page : posts) {
-			final Map<String, Object> pageContentMap = new HashMap<String, Object>();
-			pageContentMap.put("text", page.getText());
-			pageContentMap.putAll(page.getData());
-			pagesContentList.add(pageContentMap);
+	private static BlogPageContentFile generateBlogPage(final List<TextContentFile> posts, final int pageNumber) {
+		final List<Map<String, Object>> pageContentList = new ArrayList<Map<String, Object>>();
+		for (final TextContentFile post : posts) {
+			final Map<String, Object> postContentMap = new HashMap<String, Object>();
+			postContentMap.put("text", post.getText());
+			postContentMap.putAll(post.getData());
+			pageContentList.add(postContentMap);
 		}
 
 		final Map<String, Object> blogPageData = new HashMap<String, Object>();
-		blogPageData.put("thisUrl", thisUrl);
-		blogPageData.put("previousUrl", previousUrl);
-		blogPageData.put("nextUrl", nextUrl);
-		blogPageData.put("posts", pagesContentList);
+		blogPageData.put("posts", pageContentList);
 
-		final Map<String, Object> data = new HashMap<String, Object>();
-		data.put("blogPage", blogPageData);
-		data.put("layout", "blogPage.hbs"); // TODO parametrize
+		final Map<String, Object> pageData = new HashMap<String, Object>();
+		pageData.put("blogPage", blogPageData);
+		pageData.put("layout", "blogPage.hbs");
 
-		final BlogPageContentFile blogPage = new BlogPageContentFile(pageNumber, "index-" + pageNumber, "html"); // FIXME
-		blogPage.putData(data);
+		final BlogPageContentFile blogPage = new BlogPageContentFile(pageNumber);
+		blogPage.putData(pageData);
 		log.debug("Generated {}", blogPage);
 		return blogPage;
-	}
-
-	private static String relativePath(final String currentPath, final String targetPath) {
-		// TODO
-		return "(not implemented)";
 	}
 
 	private static class BlogPageCollectionVisitor implements ContentVisitor {
@@ -153,11 +147,10 @@ public class BlogPagesGeneratorProcessor {
 	}
 
 	private static class BlogPageContentFile extends TextContentFile {
+		private final int pageNumber;
 
-		final int pageNumber;
-
-		public BlogPageContentFile(final int pageNumber, final String basename, final String... extensions) {
-			super(basename, extensions);
+		public BlogPageContentFile(final int pageNumber) {
+			super(".unnamed-blog-page-" + pageNumber, "html");
 			this.pageNumber = pageNumber;
 		}
 
@@ -165,7 +158,6 @@ public class BlogPagesGeneratorProcessor {
 		public String getSource() {
 			return "Generated blog page " + pageNumber;
 		}
-
 	}
 
 	private static class ContentNodeDateComparator implements Comparator<ContentNode> {

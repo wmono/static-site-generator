@@ -45,7 +45,7 @@ public class ContentDirectory extends ContentNode {
 	}
 
 	public Collection<ContentNode> getChildren() {
-		return new ArrayList<ContentNode>(children);
+		return ImmutableList.copyOf(children);
 	}
 
 	public void merge(final ContentDirectory donor) {

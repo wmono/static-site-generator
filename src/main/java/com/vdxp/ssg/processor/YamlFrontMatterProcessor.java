@@ -37,8 +37,8 @@ public class YamlFrontMatterProcessor {
 				final Object yfmObject = reader.read();
 
 				if (yfmObject instanceof Map) {
-					@SuppressWarnings("rawtypes")
-					final Map data = (Map) yfmObject;
+					@SuppressWarnings("unchecked")
+					final Map<String, Object> data = (Map<String, Object>) yfmObject;
 
 					log.debug("Pushing in YFM in {}: {}", contentFile, data);
 					contentFile.putData(data);

@@ -14,8 +14,7 @@ public abstract class ContentNode {
 
 	private ContentNode parent;
 
-	@SuppressWarnings("rawtypes")
-	private final Map data = new HashMap();
+	private final Map<String, Object> data = new HashMap<String, Object>();
 
 	protected abstract ContentNode getChildByName(final String name);
 
@@ -39,17 +38,15 @@ public abstract class ContentNode {
 		this.parent = null;
 	}
 
-	@SuppressWarnings("rawtypes")
-	public void putData(final Map data) {
+	public void putData(final Map<String, Object> data) {
 		this.data.putAll(data);
 	}
 
-	public void putData(final Object key, final Object value) {
+	public void putData(final String key, final Object value) {
 		this.data.put(key, value);
 	}
 
-	@SuppressWarnings("rawtypes")
-	public Map getData() {
+	public Map<String, Object> getData() {
 		return ImmutableMap.copyOf(data);
 	}
 

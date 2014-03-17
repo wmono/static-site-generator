@@ -1,5 +1,6 @@
 package com.vdxp.ssg.processor;
 
+import com.google.common.collect.ImmutableList;
 import com.vdxp.ssg.content.BinaryContentFile;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentNode;
@@ -13,7 +14,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class BlogPagesGeneratorProcessor {
 
@@ -29,15 +29,13 @@ public class BlogPagesGeneratorProcessor {
 		this.options = options;
 	}
 
-	public ContentDirectory process(final ContentNode contentTree) {
+	public void process(final ContentDirectory contentTree) {
 		final List<TextContentFile> contentPages = getPages(contentTree);
 		final List<BlogPageContentFile> blogPages = generateBlogPages(contentPages, options);
 
-		final ContentDirectory content = new ContentDirectory("blog");
-		insertBlogPages(blogPages, content, options);
-		linkBlogPages(blogPages);
-
-		return content;
+		insertBlogPages(blogPages, contentTree, options);
+		generateNavigationLinks(blogPages);
+		populatePageDataMap(blogPages, options);
 	}
 
 	private static List<TextContentFile> getPages(final ContentNode contentTree) {
@@ -57,32 +55,10 @@ public class BlogPagesGeneratorProcessor {
 			final int minIndex = (pageNumber - 1) * options.numberOfPostsPerPage;
 			final int maxIndex = Math.min(pageNumber * options.numberOfPostsPerPage, contentPages.size());
 			final List<TextContentFile> pageSlice = contentPages.subList(minIndex, maxIndex);
-			blogPages.add(generateBlogPage(pageSlice, pageNumber));
+			blogPages.add(new BlogPageContentFile(pageNumber, pageSlice));
 		}
 
 		return blogPages;
-	}
-
-	private static BlogPageContentFile generateBlogPage(final List<TextContentFile> posts, final int pageNumber) {
-		final List<Map<String, Object>> pageContentList = new ArrayList<Map<String, Object>>();
-		for (final TextContentFile post : posts) {
-			final Map<String, Object> postContentMap = new HashMap<String, Object>();
-			postContentMap.put("text", post.getText());
-			postContentMap.putAll(post.getData());
-			pageContentList.add(postContentMap);
-		}
-
-		final Map<String, Object> blogPageData = new HashMap<String, Object>();
-		blogPageData.put("posts", pageContentList);
-
-		final Map<String, Object> pageData = new HashMap<String, Object>();
-		pageData.put("blogPage", blogPageData);
-		pageData.put("layout", "blogPage.hbs");
-
-		final BlogPageContentFile blogPage = new BlogPageContentFile(pageNumber);
-		blogPage.putData(pageData);
-		log.debug("Generated {}", blogPage);
-		return blogPage;
 	}
 
 	private static void insertBlogPages(final List<BlogPageContentFile> blogPages, final ContentDirectory target, final Options options) {
@@ -107,19 +83,39 @@ public class BlogPagesGeneratorProcessor {
 		}
 	}
 
-	private static void linkBlogPages(final List<BlogPageContentFile> blogPages) {
+	private static void generateNavigationLinks(final List<BlogPageContentFile> blogPages) {
 		for (int i = 0; i < blogPages.size(); i++) {
 			final BlogPageContentFile page = blogPages.get(i);
 
-			@SuppressWarnings("unchecked")
-			final Map<String, Object> data = (Map<String, Object>) page.getData().get("blogPage");
-
 			if (i > 0) {
-				data.put("previousUrl", page.getRelativePath(blogPages.get(i - 1)));
+				page.setPreviousUrl(page.getRelativePath(blogPages.get(i - 1)));
 			}
 			if (i < blogPages.size() - 1) {
-				data.put("nextUrl", page.getRelativePath(blogPages.get(i + 1)));
+				page.setNextUrl(page.getRelativePath(blogPages.get(i + 1)));
 			}
+		}
+	}
+
+	private static void populatePageDataMap(final List<BlogPageContentFile> blogPages, final Options options) {
+		for (final BlogPageContentFile page : blogPages) {
+			final HashMap<String, Object> pageData = new HashMap<String, Object>();
+			final HashMap<String, Object> blogData = new HashMap<String, Object>();
+			pageData.put("blogPage", blogData);
+			pageData.put("layout", options.layout);
+
+			final List<HashMap<String, Object>> blogPagePostsList = new ArrayList<HashMap<String, Object>>();
+			for (final TextContentFile post : page.getContentPages()) {
+				final HashMap<String, Object> postData = new HashMap<String, Object>();
+				postData.put("text", post.getText());
+				postData.put("link", page.getRelativePath(post));
+				postData.putAll(post.getData());
+				blogPagePostsList.add(postData);
+			}
+			blogData.put("posts", blogPagePostsList);
+			blogData.put("next", page.getNextUrl());
+			blogData.put("previous", page.getPreviousUrl());
+
+			page.putData(pageData);
 		}
 	}
 
@@ -151,27 +147,34 @@ public class BlogPagesGeneratorProcessor {
 		public final int numberOfPostsPerPage;
 		public final String firstPagePattern;
 		public final String pagePattern;
+		public final String layout;
 
 		private static final int defaultNumberOfPostsPerPage = 3;
 		private static final String defaultFirstPagePattern = "index";
 		private static final String defaultPagePattern = "page/%d/index";
+		private static final String defaultLayout = "blogPage.hbs";
 
 		public Options() {
-			this(defaultNumberOfPostsPerPage, defaultPagePattern, defaultFirstPagePattern);
+			this(defaultNumberOfPostsPerPage);
 		}
 
 		public Options (final int numberOfPostsPerPage) {
-			this(numberOfPostsPerPage, defaultPagePattern, defaultFirstPagePattern);
+			this(numberOfPostsPerPage, defaultPagePattern);
 		}
 
 		public Options (final int numberOfPostsPerPage, final String pagePattern) {
 			this(numberOfPostsPerPage, pagePattern, defaultFirstPagePattern);
 		}
 
-		public Options(final int numberOfPostsPerPage, final String pagePattern, final String firstPagePattern) {
+		public Options (final int numberOfPostsPerPage, final String pagePattern, final String firstPagePattern) {
+			this(numberOfPostsPerPage, pagePattern, firstPagePattern, defaultLayout);
+		}
+
+		public Options(final int numberOfPostsPerPage, final String pagePattern, final String firstPagePattern, final String layout) {
 			this.numberOfPostsPerPage = numberOfPostsPerPage;
 			this.pagePattern = pagePattern;
 			this.firstPagePattern = firstPagePattern;
+			this.layout = layout;
 		}
 
 		private String getPagePath(final int pageNumber) {
@@ -185,15 +188,43 @@ public class BlogPagesGeneratorProcessor {
 
 	private static class BlogPageContentFile extends TextContentFile {
 		private final int pageNumber;
+		private final List<TextContentFile> contentPages;
+		private String nextUrl = null;
+		private String previousUrl = null;
 
-		public BlogPageContentFile(final int pageNumber) {
+		public BlogPageContentFile(final int pageNumber, final List<TextContentFile> contentPages) {
 			super(".unnamed-blog-page-" + pageNumber, "html");
 			this.pageNumber = pageNumber;
+			this.contentPages = contentPages;
 		}
 
 		@Override
 		public String getSource() {
 			return "Generated blog page " + pageNumber;
+		}
+
+		public int getPageNumber() {
+			return pageNumber;
+		}
+
+		public List<TextContentFile> getContentPages() {
+			return ImmutableList.copyOf(contentPages);
+		}
+
+		public String getNextUrl() {
+			return nextUrl;
+		}
+
+		public void setNextUrl(final String nextUrl) {
+			this.nextUrl = nextUrl;
+		}
+
+		public String getPreviousUrl() {
+			return previousUrl;
+		}
+
+		public void setPreviousUrl(final String previousUrl) {
+			this.previousUrl = previousUrl;
 		}
 	}
 

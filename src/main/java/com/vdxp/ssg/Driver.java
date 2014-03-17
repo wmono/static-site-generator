@@ -28,9 +28,7 @@ public class Driver {
 		new YamlFrontMatterProcessor().process(layout);
 		new DateParsingProcessor("date").process(target);
 		new MarkdownProcessor().process(target);
-
-		final ContentDirectory blogPages = new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
-		target.merge(blogPages);
+		new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
 
 		new HandlebarsLayoutProcessor().process(target, layout);
 		new FileOutputProcessor().writeContentRoot(target);

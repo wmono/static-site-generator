@@ -1,8 +1,11 @@
 package com.vdxp.ssg.content;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,4 +77,52 @@ public abstract class ContentNode {
 		throw new IndexOutOfBoundsException("split returned too many elements");
 	}
 
+	public String getRelativePath(final ContentNode target) {
+		final ArrayDeque<String> path = new ArrayDeque<String>();
+		final ContentNode commonParent = getNearestCommonParent(this, target);
+		if (commonParent == null) {
+			throw new IllegalArgumentException("Content nodes do not have a common parent");
+		}
+
+		ContentNode current;
+
+		current = target;
+		while (current != null && current != commonParent) {
+			path.addFirst(current.getName());
+			current = current.getParent();
+		}
+
+		current = this.getParent();
+		while (current != null && current != commonParent) {
+			path.addFirst("..");
+			current = current.getParent();
+		}
+
+		return Joiner.on('/').join(path);
+	}
+
+	public Deque<ContentNode> getAllParents() {
+		final ArrayDeque<ContentNode> allParents = new ArrayDeque<ContentNode>();
+
+		ContentNode current = this;
+		while (current != null) {
+			allParents.addFirst(current);
+			current = current.getParent();
+		}
+
+		return allParents;
+	}
+
+	public static ContentNode getNearestCommonParent(final ContentNode first, final ContentNode second) {
+		final Deque<ContentNode> firstParents = first.getAllParents();
+		final Deque<ContentNode> secondParents = second.getAllParents();
+
+		ContentNode nearestCommonParent = null;
+		while (!firstParents.isEmpty() && firstParents.peekFirst() == secondParents.peekFirst()) {
+			nearestCommonParent = firstParents.removeFirst();
+			secondParents.removeFirst();
+		}
+
+		return nearestCommonParent;
+	}
 }

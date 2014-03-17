@@ -1,7 +1,5 @@
 package com.vdxp.ssg.processor;
 
-import com.joestelmach.natty.DateGroup;
-import com.joestelmach.natty.Parser;
 import com.vdxp.ssg.content.BinaryContentFile;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentNode;
@@ -13,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,41 +93,13 @@ public class BlogPagesGeneratorProcessor {
 	}
 
 	private static class ContentNodeDateComparator implements Comparator<ContentNode> {
-
-		private static final Logger log = LoggerFactory.getLogger(ContentNodeDateComparator.class);
-
-		private final Parser natty = new Parser();
-
 		@Override
 		public int compare(final ContentNode left, final ContentNode right) {
-			return -getDateMillis(left).compareTo(getDateMillis(right));
-		}
-
-		private Long getDateMillis(final ContentNode node) {
-			final long defaultDateMillis = System.currentTimeMillis();
-
-			final Object nodeDate = node.getData().get("date");
-			if (!(nodeDate instanceof String)) {
-				log.debug("Unrecognized date {} in {}", nodeDate, node);
-				return defaultDateMillis;
-			}
-
-			final List<DateGroup> parsedDateGroups = natty.parse((String) nodeDate);
-			if (parsedDateGroups.isEmpty()) {
-				log.debug("Unrecognized date {} in {}", nodeDate, node);
-				return defaultDateMillis;
-			}
-
-			final DateGroup parsedDateGroup = parsedDateGroups.get(0);
-			final List<Date> parsedDates = parsedDateGroup.getDates();
-			if (parsedDates.isEmpty()) {
-				log.debug("Unrecognized date {} in {}", nodeDate, node);
-				return defaultDateMillis;
-			}
-
-			final Date parsedDate = parsedDates.get(0);
-			log.debug("Date {} in {} parsed as {}", nodeDate, node, parsedDate);
-			return parsedDate.getTime();
+			final Object leftDateObject = left.getData().get("date_raw");
+			final Object rightDateObject = right.getData().get("date_raw");
+			final Long leftDate = leftDateObject instanceof Long ? (Long) leftDateObject : Long.MAX_VALUE;
+			final Long rightDate = rightDateObject instanceof Long ? (Long) rightDateObject : Long.MAX_VALUE;
+			return rightDate.compareTo(leftDate);
 		}
 	}
 

@@ -3,6 +3,7 @@ package com.vdxp.ssg;
 import com.vdxp.ssg.content.ContentDirectory;
 import com.vdxp.ssg.content.ContentNode;
 import com.vdxp.ssg.processor.BlogPagesGeneratorProcessor;
+import com.vdxp.ssg.processor.DateParsingProcessor;
 import com.vdxp.ssg.processor.FileInputProcessor;
 import com.vdxp.ssg.processor.FileOutputProcessor;
 import com.vdxp.ssg.processor.HandlebarsLayoutProcessor;
@@ -25,6 +26,7 @@ public class Driver {
 
 		new YamlFrontMatterProcessor().process(target);
 		new YamlFrontMatterProcessor().process(layout);
+		new DateParsingProcessor("date").process(target);
 		new MarkdownProcessor().process(target);
 
 		final ContentNode blogPages = new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);

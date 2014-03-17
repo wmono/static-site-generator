@@ -17,21 +17,28 @@ import java.io.IOException;
 public class Driver {
 
 	public static void main(final String[] args) throws IOException {
-		final ContentDirectory target = new ContentDirectory("target");
-		final ContentDirectory blog = new FileInputProcessor().readContentRoot("src");
 		final ContentDirectory layout = new FileInputProcessor().readContentRoot("layout");
+		new YamlFrontMatterProcessor().process(layout);
+
+		final ContentDirectory site = new FileInputProcessor().readContentRoot("site");
+		new YamlFrontMatterProcessor().process(site);
+		new MarkdownProcessor().process(site);
+
+		final ContentDirectory blog = new FileInputProcessor().readContentRoot("blog");
 
 		for (final ContentNode node : blog.getChildren()) {
 			node.putData("layout", "blog.hbs");
 		}
-		target.merge(blog);
 
-		new YamlFrontMatterProcessor().process(target);
-		new YamlFrontMatterProcessor().process(layout);
-		new DateParsingProcessor("date").process(target);
-		new MarkdownProcessor().process(target);
-		new SplitReadMoreProcessor().process(target);
-		new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(target);
+		new YamlFrontMatterProcessor().process(blog);
+		new DateParsingProcessor("date").process(blog);
+		new MarkdownProcessor().process(blog);
+		new SplitReadMoreProcessor().process(blog);
+		new BlogPagesGeneratorProcessor(new BlogPagesGeneratorProcessor.Options(3)).process(blog);
+
+		final ContentDirectory target = new ContentDirectory("target");
+		target.merge(site);
+		target.merge(blog);
 
 		new RootPathProcessor().process(target);
 		new HandlebarsLayoutProcessor().process(target, layout);

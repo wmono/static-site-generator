@@ -106,7 +106,7 @@ public class BlogPagesGeneratorProcessor {
 			final List<HashMap<String, Object>> blogPagePostsList = new ArrayList<HashMap<String, Object>>();
 			for (final TextContentFile post : page.getContentPages()) {
 				final HashMap<String, Object> postData = new HashMap<String, Object>();
-				postData.put("text", post.getText());
+				postData.put("content", post.getText());
 				postData.put("link", page.getRelativePath(post));
 				postData.putAll(post.getData());
 				blogPagePostsList.add(postData);

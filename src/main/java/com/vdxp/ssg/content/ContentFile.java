@@ -31,11 +31,6 @@ public abstract class ContentFile extends ContentNode {
 		return sb.toString();
 	}
 
-	@Override
-	protected ContentNode getChildByName(final String name) {
-		return null;
-	}
-
 	public String getBasename() {
 		return basename;
 	}

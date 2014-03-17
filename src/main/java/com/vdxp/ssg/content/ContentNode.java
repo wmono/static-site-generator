@@ -16,8 +16,6 @@ public abstract class ContentNode {
 
 	private final Map<String, Object> data = new HashMap<String, Object>();
 
-	protected abstract ContentNode getChildByName(final String name);
-
 	protected abstract void accept(final ContentVisitor visitor, List<ContentNode> parents);
 
 	public abstract String getName();
@@ -53,25 +51,6 @@ public abstract class ContentNode {
 	public void accept(final ContentVisitor visitor) {
 		final List<ContentNode> parents = Collections.emptyList();
 		accept(visitor, parents);
-	}
-
-	public ContentNode getPath(final String path) {
-		final String[] pathParts = path.split("/", 2);
-		if (pathParts.length == 0) {
-			return null;
-		}
-		if (pathParts.length == 1) {
-			return getChildByName(pathParts[0]);
-		}
-		if (pathParts.length == 2) {
-			final ContentNode child = getChildByName(pathParts[0]);
-			if (child != null) {
-				return child.getPath(pathParts[1]);
-			} else {
-				return null;
-			}
-		}
-		throw new IndexOutOfBoundsException("split returned too many elements");
 	}
 
 	public String getRelativePath(final ContentNode target) {

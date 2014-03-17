@@ -22,7 +22,7 @@ public class HandlebarsLayoutProcessor {
 
 	private static final Logger log = LoggerFactory.getLogger(HandlebarsLayoutProcessor.class);
 
-	public void process(final ContentNode contentTree, final ContentNode layoutContentTree) {
+	public void process(final ContentDirectory contentTree, final ContentDirectory layoutContentTree) {
 		contentTree.accept(new HandlebarsLayoutVisitor(layoutContentTree));
 	}
 
@@ -30,9 +30,9 @@ public class HandlebarsLayoutProcessor {
 
 		private final Handlebars handlebars;
 
-		private final ContentNode layoutContentTree;
+		private final ContentDirectory layoutContentTree;
 
-		public HandlebarsLayoutVisitor(final ContentNode layoutContentTree) {
+		public HandlebarsLayoutVisitor(final ContentDirectory layoutContentTree) {
 			this.handlebars = new Handlebars();
 			this.layoutContentTree = layoutContentTree;
 		}
@@ -91,7 +91,7 @@ public class HandlebarsLayoutProcessor {
 			}
 		}
 
-		private static TextContentFile getLayoutByPath(final String layoutPath, final ContentNode contentTree) {
+		private static TextContentFile getLayoutByPath(final String layoutPath, final ContentDirectory contentTree) {
 			final ContentNode contentNode = contentTree.getPath(layoutPath);
 			if (contentNode == null) {
 				log.warn("Layout path {} not found in content tree", layoutPath);
